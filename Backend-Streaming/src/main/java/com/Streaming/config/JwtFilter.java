@@ -2,7 +2,6 @@ package com.Streaming.config;
 
 
 import com.Streaming.security.CustomUserDetailsService;
-import com.Streaming.security.CustomUserDetailsService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +42,11 @@ public class JwtFilter extends OncePerRequestFilter {
         String email = jwtService.extractEmail(token);
 
         var userDetails = userDetailsService.loadUserByUsername(email);
+
+        if (!userDetails.isEnabled()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         var auth = new UsernamePasswordAuthenticationToken(
                 userDetails,

@@ -31,6 +31,9 @@ public class Payment {
     @ManyToOne
     private Subscription subscription;
 
+    @ManyToOne
+    private SubscriptionPlan plan;
+
     private Double amount;
 
     @Builder.Default
@@ -44,9 +47,30 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     private PaymentStatus status = PaymentStatus.PENDING;
 
+    private String provider;
 
+    private String providerMethod;
+
+    @Column(unique = true)
     private String externalId;
+
+    private String externalStatus;
+
+    private String externalStatusDetail;
+
+    @Column(unique = true)
+    private String externalReference;
+
+    @Column(unique = true)
+    private String idempotencyKey;
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    private LocalDateTime updatedAt;
+
+    @PreUpdate
+    public void touchUpdatedAt() {
+        updatedAt = LocalDateTime.now();
+    }
 }

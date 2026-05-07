@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, UserCheck, UserX, Eye } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/api-error';
 import { toast } from 'sonner';
 import { adminService } from '@/services/adminService';
 
@@ -30,7 +31,7 @@ const AdminUsersPage: React.FC = () => {
     setTotalPages(res.totalPages);
 
   } catch (error) {
-    toast.error('Error al cargar usuarios');
+    toast.error(getApiErrorMessage(error, 'Error al cargar usuarios'));
   } finally {
     setLoading(false);
   }
@@ -61,8 +62,8 @@ const AdminUsersPage: React.FC = () => {
 
     toast.success('Estado actualizado');
 
-  } catch {
-    toast.error('Error al actualizar');
+  } catch (error) {
+    toast.error(getApiErrorMessage(error, 'Error al actualizar'));
   }
 };
   return (

@@ -1,33 +1,38 @@
-import api from './api';
-import type { AuthResponse, LoginCredentials, RegisterData } from '@/types';
+import api, { rawApi } from './api';
+import type { AuthResponse, LoginCredentials, RegisterData, User } from '@/types';
 
 export const authService = {
-
-
   login: async (credentials: LoginCredentials) => {
-  const response = await api.post<AuthResponse>('auth/login', credentials);
-  return response.data;
-},
+    const response = await rawApi.post<AuthResponse>('auth/login', credentials);
+    return response.data;
+  },
 
-register: async (data: RegisterData) => {
-  const response = await api.post<AuthResponse>('auth/register', data);
-  return response.data;
-},
-
+  register: async (data: RegisterData) => {
+    const response = await rawApi.post<AuthResponse>('auth/register', data);
+    return response.data;
+  },
 
   loginWithGoogle: async (token: string) => {
-  const response = await api.post<AuthResponse>('/auth/google', { token });
-  return response.data;
-},
+    const response = await rawApi.post<AuthResponse>('auth/google', { token });
+    return response.data;
+  },
 
-  logout: () => api.post('/auth/logout'),
+  logout: (refreshToken: string) =>
+    rawApi.post<{ message: string }>('auth/logout', { refreshToken }),
 
-  refreshToken: (refreshToken: string) =>
-    api.post<AuthResponse>('/auth/refresh', { refreshToken }),
+  refreshToken: async (refreshToken: string) => {
+    const response = await rawApi.post<AuthResponse>('auth/refresh', { refreshToken });
+    return response.data;
+  },
+
+  getCurrentUser: async () => {
+    const response = await api.get<User>('auth/me');
+    return response.data;
+  },
 
   forgotPassword: (email: string) =>
-    api.post('/auth/forgot-password', { email }),
+    rawApi.post('auth/forgot-password', { email }),
 
   resetPassword: (token: string, password: string) =>
-    api.post('/auth/reset-password', { token, password }),
+    rawApi.post('auth/reset-password', { token, password }),
 };

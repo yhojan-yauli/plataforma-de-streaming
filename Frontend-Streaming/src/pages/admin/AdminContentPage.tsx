@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Trash2, ToggleLeft, ToggleRight, Search, X } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 import { adminService } from "@/services/adminService";
 import type { Content } from "@/types";
@@ -27,14 +28,9 @@ const AdminContentPage: React.FC = () => {
       setLoading(true);
       const data = await adminService.getContents(0, 20, search);
 
-      const fixed = data.content.map((c: any) => ({
-        ...c,
-        genre: typeof c.genre === "string" ? JSON.parse(c.genre) : c.genre,
-      }));
-
-      setContents(fixed);
-    } catch {
-      toast.error("Error al cargar contenido");
+      setContents(data.content);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Error al cargar contenido"));
     } finally {
       setLoading(false);
     }
@@ -55,11 +51,7 @@ const AdminContentPage: React.FC = () => {
         duration: Number(form.duration),
         posterUrl: form.posterUrl,
         videoUrl: form.videoUrl,
-
-        // 🔥 SOLUCIÓN FINAL
-        genre: JSON.stringify(
-          form.genre ? form.genre.split(",").map((g) => g.trim()) : ["General"],
-        ),
+        genre: form.genre ? form.genre.split(",").map((g) => g.trim()).filter(Boolean) : ["General"],
       });
 
       toast.success("Contenido creado");
@@ -78,8 +70,7 @@ const AdminContentPage: React.FC = () => {
 
       fetchContents();
     } catch (error) {
-      console.log(error);
-      toast.error("Error al crear contenido");
+      toast.error(getApiErrorMessage(error, "Error al crear contenido"));
     }
   };
 
@@ -89,19 +80,19 @@ const AdminContentPage: React.FC = () => {
       await adminService.deleteContent(id);
       toast.success("Contenido eliminado");
       fetchContents();
-    } catch {
-      toast.error("Error al eliminar");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Error al eliminar"));
     }
   };
 
   // 🔹 TOGGLE
   const toggleActive = async (content: Content) => {
     try {
-      await adminService.toggleContentActive(content.id, !content.active);
+      await adminService.toggleContentActive(content.id);
       toast.success("Estado actualizado");
       fetchContents();
-    } catch {
-      toast.error("Error al actualizar");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Error al actualizar"));
     }
   };
 

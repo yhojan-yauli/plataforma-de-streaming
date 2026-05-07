@@ -1,49 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import HeroBanner from '@/components/HeroBanner';
 import ContentRow from '@/components/ContentRow';
 import SkeletonCard from '@/components/SkeletonCard';
+import { contentService } from '@/services/contentService';
+import { useContentStore } from '@/store';
 import type { Content, Category } from '@/types';
 
-/** Mock data for demo — replace with API calls */
-const mockContent = (id: string, title: string, genre: string[]): Content => ({
-  id,
-  title,
-  description: 'Una historia cautivadora que no querrás dejar de ver. Con un elenco extraordinario y una trama llena de giros inesperados.',
-  type: Math.random() > 0.5 ? 'MOVIE' : 'SERIES',
-  genre,
-  year: 2020 + Math.floor(Math.random() * 5),
-  duration: 90 + Math.floor(Math.random() * 60),
-  rating: 3.5 + Math.random() * 1.5,
-  posterUrl: `https://picsum.photos/seed/${id}/400/600`,
-  bannerUrl: `https://picsum.photos/seed/${id}-banner/1920/1080`,
-  videoUrl: '',
-  active: true,
-  views: Math.floor(Math.random() * 100000),
-  createdAt: new Date().toISOString(),
-});
-
-const mockCategories: Category[] = [
-  { id: '1', name: '🔥 Tendencias', contents: Array.from({ length: 10 }, (_, i) => mockContent(`trend-${i}`, `Tendencia ${i + 1}`, ['Acción'])) },
-  { id: '2', name: '🎬 Películas de Acción', contents: Array.from({ length: 10 }, (_, i) => mockContent(`action-${i}`, `Acción ${i + 1}`, ['Acción'])) },
-  { id: '3', name: '😂 Comedias', contents: Array.from({ length: 10 }, (_, i) => mockContent(`comedy-${i}`, `Comedia ${i + 1}`, ['Comedia'])) },
-  { id: '4', name: '🎭 Drama', contents: Array.from({ length: 10 }, (_, i) => mockContent(`drama-${i}`, `Drama ${i + 1}`, ['Drama'])) },
-  { id: '5', name: '👻 Terror', contents: Array.from({ length: 10 }, (_, i) => mockContent(`horror-${i}`, `Terror ${i + 1}`, ['Terror'])) },
-  { id: '6', name: '📺 Series Populares', contents: Array.from({ length: 10 }, (_, i) => mockContent(`series-${i}`, `Serie ${i + 1}`, ['Drama'])) },
-];
-
 const HomePage: React.FC = () => {
+  const { continueWatching } = useContentStore();
   const [loading, setLoading] = useState(true);
   const [featured, setFeatured] = useState<Content | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [recommendations, setRecommendations] = useState<Content[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate API loading
-    const timer = setTimeout(() => {
-      setFeatured(mockContent('featured', 'El Último Horizonte', ['Ciencia Ficción', 'Drama']));
-      setCategories(mockCategories);
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+
+    const loadHome = async () => {
+      setLoading(true);
+
+      try {
+        const [featuredResponse, categoriesResponse, recommendationsResponse] = await Promise.all([
+          contentService.getFeatured(),
+          contentService.getCategories(),
+          contentService.getRecommendations(),
+        ]);
+
+        if (cancelled) return;
+
+        const featuredContent = featuredResponse.data;
+        setFeatured(featuredContent);
+        setCategories(categoriesResponse.data);
+        setRecommendations(recommendationsResponse.data.filter((item) => item.id !== featuredContent.id));
+        setError(null);
+      } catch {
+        if (cancelled) return;
+        setError('No pudimos cargar el catálogo ahora mismo.');
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadHome();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) {
@@ -51,8 +56,8 @@ const HomePage: React.FC = () => {
       <div>
         <SkeletonCard variant="banner" />
         <div className="mt-8 space-y-8">
-          {[1, 2, 3].map((i) => (
-            <SkeletonCard key={i} variant="row" />
+          {[1, 2, 3].map((item) => (
+            <SkeletonCard key={item} variant="row" />
           ))}
         </div>
       </div>
@@ -62,9 +67,27 @@ const HomePage: React.FC = () => {
   return (
     <div className="-mt-16">
       <HeroBanner content={featured} />
-      <div className="-mt-20 relative z-10 space-y-2 pb-12">
-        {categories.map((cat) => (
-          <ContentRow key={cat.id} title={cat.name} contents={cat.contents} />
+
+      <div className="relative z-10 -mt-20 space-y-2 pb-12">
+        {error && (
+          <div className="mx-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-foreground md:mx-8">
+            {error}
+          </div>
+        )}
+
+        {continueWatching.length > 0 && (
+          <ContentRow
+            title="Seguir Viendo"
+            contents={continueWatching.map((item) => item.content)}
+          />
+        )}
+
+        {recommendations.length > 0 && (
+          <ContentRow title="Recomendado para Ti" contents={recommendations} />
+        )}
+
+        {categories.map((category) => (
+          <ContentRow key={category.id} title={category.name} contents={category.contents} />
         ))}
       </div>
     </div>

@@ -1,13 +1,17 @@
 import { create } from 'zustand';
-import type { User, Subscription, Content, WatchHistory } from '@/types';
+import { clearStoredAuthSession, readStoredAuthSession, storeAuthSession } from '@/lib/auth-session';
+import type { AuthResponse, User, Subscription, Content, WatchHistory } from '@/types';
 
 interface AuthState {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
+  expiresAt: string | null;
+  refreshTokenExpiresAt: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  setSession: (session: AuthResponse | null) => void;
   setUser: (user: User | null) => void;
-  setToken: (token: string | null) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
   hydrate: () => void;
@@ -16,43 +20,113 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
+  refreshToken: null,
+  expiresAt: null,
+  refreshTokenExpiresAt: null,
   isAuthenticated: false,
   isLoading: true,
-  setUser: (user) => {
-    if (user) localStorage.setItem('auth_user', JSON.stringify(user));
-    else localStorage.removeItem('auth_user');
-    set({ user, isAuthenticated: !!user });
+  setSession: (session) => {
+    if (session) {
+      storeAuthSession(session);
+    } else {
+      clearStoredAuthSession();
+    }
+
+    set({
+      user: session?.user ?? null,
+      token: session?.token ?? null,
+      refreshToken: session?.refreshToken ?? null,
+      expiresAt: session?.expiresAt ?? null,
+      refreshTokenExpiresAt: session?.refreshTokenExpiresAt ?? null,
+      isAuthenticated: !!session?.token && !!session?.user,
+    });
   },
-  setToken: (token) => {
-    if (token) localStorage.setItem('auth_token', token);
-    else localStorage.removeItem('auth_token');
-    set({ token });
-  },
+  setUser: (user) =>
+    set((state) => {
+      if (!state.token || !state.refreshToken || !state.expiresAt || !state.refreshTokenExpiresAt || !user) {
+        clearStoredAuthSession();
+        return {
+          user,
+          token: null,
+          refreshToken: null,
+          expiresAt: null,
+          refreshTokenExpiresAt: null,
+          isAuthenticated: false,
+        };
+      }
+
+      const session: AuthResponse = {
+        token: state.token,
+        refreshToken: state.refreshToken,
+        expiresAt: state.expiresAt,
+        refreshTokenExpiresAt: state.refreshTokenExpiresAt,
+        user,
+      };
+
+      storeAuthSession(session);
+
+      return {
+        user,
+        isAuthenticated: true,
+      };
+    }),
   setLoading: (isLoading) => set({ isLoading }),
   logout: () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
-    set({ user: null, token: null, isAuthenticated: false });
+    clearStoredAuthSession();
+    set({
+      user: null,
+      token: null,
+      refreshToken: null,
+      expiresAt: null,
+      refreshTokenExpiresAt: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
   },
   hydrate: () => {
-    const token = localStorage.getItem('auth_token');
-    const userStr = localStorage.getItem('auth_user');
-    const user = userStr ? JSON.parse(userStr) : null;
-    set({ token, user, isAuthenticated: !!token && !!user, isLoading: false });
+    const session = readStoredAuthSession();
+    set({
+      user: session?.user ?? null,
+      token: session?.token ?? null,
+      refreshToken: session?.refreshToken ?? null,
+      expiresAt: session?.expiresAt ?? null,
+      refreshTokenExpiresAt: session?.refreshTokenExpiresAt ?? null,
+      isAuthenticated: !!session?.token && !!session?.user,
+      isLoading: false,
+    });
   },
 }));
 
 interface SubscriptionState {
   subscription: Subscription | null;
   isActive: boolean;
+  isLoading: boolean;
+  hasLoaded: boolean;
   setSubscription: (sub: Subscription | null) => void;
+  setLoading: (loading: boolean) => void;
+  reset: () => void;
 }
 
 export const useSubscriptionStore = create<SubscriptionState>((set) => ({
   subscription: null,
   isActive: false,
+  isLoading: false,
+  hasLoaded: false,
   setSubscription: (subscription) =>
-    set({ subscription, isActive: subscription?.active ?? false }),
+    set({
+      subscription,
+      isActive: subscription?.active ?? false,
+      isLoading: false,
+      hasLoaded: true,
+    }),
+  setLoading: (isLoading) => set({ isLoading }),
+  reset: () =>
+    set({
+      subscription: null,
+      isActive: false,
+      isLoading: false,
+      hasLoaded: false,
+    }),
 }));
 
 interface ContentState {
@@ -71,7 +145,14 @@ export const useContentStore = create<ContentState>((set) => ({
   continueWatching: [],
   searchQuery: '',
   setMyList: (myList) => set({ myList }),
-  addToMyList: (content) => set((s) => ({ myList: [...s.myList, content] })),
+  addToMyList: (content) =>
+    set((state) => {
+      if (state.myList.some((item) => item.id === content.id)) {
+        return state;
+      }
+
+      return { myList: [content, ...state.myList] };
+    }),
   removeFromMyList: (id) => set((s) => ({ myList: s.myList.filter((c) => c.id !== id) })),
   setContinueWatching: (continueWatching) => set({ continueWatching }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),

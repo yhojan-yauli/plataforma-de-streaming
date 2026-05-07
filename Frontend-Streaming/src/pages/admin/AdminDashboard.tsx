@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Users, Film, DollarSign, TrendingUp, Eye, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { getApiErrorMessage } from '@/lib/api-error';
 import { adminService } from '@/services/adminService';
 import { toast } from 'sonner';
 
@@ -15,8 +16,7 @@ const AdminDashboard: React.FC = () => {
       const res = await adminService.getStats();
       setStats(res.data);
     } catch (error) {
-      console.log(error);
-      toast.error('Error al cargar dashboard');
+      toast.error(getApiErrorMessage(error, 'Error al cargar dashboard'));
     } finally {
       setLoading(false);
     }

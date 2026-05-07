@@ -32,6 +32,12 @@ const Navbar: React.FC = () => {
     if (searchQuery.trim()) navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
   };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+    setShowMenu(false);
+  };
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -120,7 +126,7 @@ const Navbar: React.FC = () => {
                     </Link>
                     <hr className="my-1 border-border" />
                     <button
-                      onClick={() => { logout(); navigate('/'); setShowMenu(false); }}
+                      onClick={() => void handleLogout()}
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-secondary"
                     >
                       <LogOut className="h-4 w-4" /> Cerrar Sesión

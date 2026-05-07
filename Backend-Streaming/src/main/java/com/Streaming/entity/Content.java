@@ -37,6 +37,7 @@ public class Content {
     @Column(columnDefinition = "JSON")
     private String genre;
 
+    @Column(name = "release_year")
     private Integer year;
 
     private Integer duration;

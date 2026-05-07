@@ -1,41 +1,39 @@
 package com.Streaming.controller;
 
-import com.Streaming.entity.Content;
-import com.Streaming.repository.ContentRepository;
+import com.Streaming.dto.response.CategoryResponse;
+import com.Streaming.dto.response.ContentResponse;
 import com.Streaming.service.ContentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user/content")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('USER','ADMIN')")
 public class UserContentController {
-
-    private final ContentRepository contentRepository;
 
     private final ContentService contentService;
 
-    // 🔹 TODOS LOS CONTENIDOS ACTIVOS
     @GetMapping
-    public List<Content> getAllActiveContent() {
-        return contentRepository.findByActiveTrue();
+    public List<ContentResponse> getAllActiveContent() {
+        return contentService.getAllActive(false);
     }
 
     @GetMapping("/featured")
-    public Content getFeatured() {
-        return contentService.getFeatured();
+    public ContentResponse getFeatured() {
+        return contentService.getFeatured(false);
     }
 
     @GetMapping("/categories")
-    public List<Map<String, Object>> getCategories() {
-        return contentService.getCategories();
+    public List<CategoryResponse> getCategories() {
+        return contentService.getCategories(false);
     }
 
     @GetMapping("/recommendations")
-    public List<Content> getRecommendations() {
-        return contentService.getRecommendations();
+    public List<ContentResponse> getRecommendations() {
+        return contentService.getRecommendations(false);
     }
 }

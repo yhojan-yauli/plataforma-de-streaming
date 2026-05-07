@@ -7,6 +7,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import MainLayout from "@/layouts/MainLayout";
 import AdminLayout from "@/layouts/AdminLayout";
 import ProtectedRoute from "@/routes/ProtectedRoute";
+import SubscriptionGuard from "@/routes/SubscriptionGuard";
 
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
@@ -58,10 +59,10 @@ const App = () => (
             </Route>
 
             {/* Watch page (full screen, no layout) */}
-            <Route path="/watch/:id" element={<ProtectedRoute><WatchPage /></ProtectedRoute>} />
+            <Route path="/watch/:id" element={<ProtectedRoute><SubscriptionGuard><WatchPage /></SubscriptionGuard></ProtectedRoute>} />
 
             {/* Admin routes */}
-            <Route element={<ProtectedRoute requiredRole="ADMIN"><AdminLayout /></ProtectedRoute>}>
+            <Route element={<ProtectedRoute requiredRole="ADMIN" redirectTo="/home"><AdminLayout /></ProtectedRoute>}>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/content" element={<AdminContentPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/services/authService';
+import { getApiErrorMessage } from '@/lib/api-error';
 import { toast } from 'sonner';
 
 const LoginPage: React.FC = () => {
@@ -22,21 +23,17 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await authService.login({ email, password });
-      login(data.token, data.user);
+      login(data);
       toast.success('¡Bienvenido de vuelta!');
       navigate(data.user.role === 'ADMIN' ? '/admin' : '/home');
-    } catch (err: any) {
-  console.log("ERROR:", err.response?.data);
-
-  const msg = err.response?.data || 'Error en login';
-  toast.error(typeof msg === 'string' ? msg : 'Error en login');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Error en login'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = () => {
-    // Redirect to backend Google OAuth endpoint
     window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/auth/google/redirect`;
   };
 

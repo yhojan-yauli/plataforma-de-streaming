@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -13,7 +14,7 @@ public class ContentResponse {
     private String title;
     private String description;
     private String type;
-    private String genre;
+    private List<String> genre;
 
     private Integer year;
     private Integer duration;

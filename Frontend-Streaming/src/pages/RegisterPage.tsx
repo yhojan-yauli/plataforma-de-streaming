@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, UserIcon, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/services/authService';
+import { getApiErrorMessage } from '@/lib/api-error';
 import { toast } from 'sonner';
 
 const RegisterPage: React.FC = () => {
@@ -36,19 +37,18 @@ const RegisterPage: React.FC = () => {
   setLoading(true);
 
   try {
-    const data = await authService.register({ name, email, password }); // ✅ FIX
+    const data = await authService.register({ name, email, password });
 
     if (data?.token && data?.user) {
-      login(data.token, data.user);
+      login(data);
       toast.success('¡Cuenta creada exitosamente!');
       navigate('/plans');
     } else {
       throw new Error('Respuesta inválida');
     }
 
-  } catch (err: any) {
-    console.error(err);
-    toast.error('Error al registrarse');
+  } catch (error) {
+    toast.error(getApiErrorMessage(error, 'Error al registrarse'));
   } finally {
     setLoading(false);
   }

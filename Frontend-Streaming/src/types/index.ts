@@ -6,12 +6,19 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string | null;
   role: 'USER' | 'ADMIN';
+  emailVerified: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt?: string | null;
 }
 
 export interface AuthResponse {
   token: string;
   refreshToken: string;
+  expiresAt: string;
+  refreshTokenExpiresAt: string;
   user: User;
 }
 
@@ -73,32 +80,60 @@ export interface SubscriptionPlan {
   price: number;
   currency: string;
   description: string;
+  active: boolean;
 }
 
 export interface Subscription {
   id: string;
   userId: string;
   planId: string;
+  plan: SubscriptionPlan;
   startDate: string;
   endDate: string;
   active: boolean;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod | null;
   amountPaid: number;
+  daysRemaining: number;
+  hoursRemaining: number;
 }
 
 /** Payment types */
-export type PaymentMethod = 'CARD' | 'MERCADO_PAGO' | 'YAPE';
+export type PaymentMethod = 'CARD' | 'YAPE';
+export type PaymentStatus = 'SUCCESS' | 'PENDING' | 'FAILED';
 
-export interface PaymentRequest {
+export interface StripeCheckoutConfig {
+  provider: 'STRIPE';
+  enabled: boolean;
+  publishableKey?: string | null;
+  currency: string;
+}
+
+export interface CreateStripePaymentIntentRequest {
   planId: string;
-  method: PaymentMethod;
+}
+
+export interface StripePaymentIntentResponse {
+  paymentId: string;
+  clientSecret: string;
+  externalId: string;
+  externalStatus: string;
   amount: number;
-  customMonths?: number;
+  currency: string;
+  plan: SubscriptionPlan;
 }
 
 export interface PaymentResponse {
   id: string;
-  status: 'SUCCESS' | 'PENDING' | 'FAILED';
+  amount: number;
+  currency: string;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  provider?: string;
+  providerMethod?: string;
+  externalId?: string;
+  externalStatus?: string;
+  externalStatusDetail?: string;
+  createdAt: string;
   subscription?: Subscription;
 }
 
@@ -106,6 +141,7 @@ export interface PaymentResponse {
 export interface WatchHistory {
   id: string;
   contentId: string;
+  episodeId?: string | null;
   content: Content;
   progress: number; // percentage
   lastWatched: string;
@@ -150,9 +186,36 @@ export interface ApiResponse<T> {
 }
 
 export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
+  content: T[];
   page: number;
-  pageSize: number;
+  size: number;
+  totalElements: number;
   totalPages: number;
+  first: boolean;
+  last: boolean;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface AdminPayment {
+  id: string;
+  userId?: string;
+  userName?: string;
+  userEmail?: string;
+  planId?: string;
+  plan?: SubscriptionPlan;
+  amount: number;
+  currency: string;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  provider?: string;
+  providerMethod?: string;
+  externalId?: string;
+  externalStatus?: string;
+  externalStatusDetail?: string;
+  createdAt: string;
+  subscriptionId?: string;
+  subscriptionStartDate?: string;
+  subscriptionEndDate?: string;
+  subscriptionActive?: boolean;
 }

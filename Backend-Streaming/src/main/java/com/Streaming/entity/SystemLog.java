@@ -2,7 +2,6 @@ package com.Streaming.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.boot.logging.LogLevel;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
