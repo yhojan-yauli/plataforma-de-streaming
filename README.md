@@ -139,8 +139,8 @@ El sistema incluye:
 ## 👨‍💻 Autor
 
 **Yhojan Yauli** 
+**FransRooswvelt**
 **levi**
-****
-**  ** 
+**** 
 Proyecto académico – Ingeniería de Software  
 
